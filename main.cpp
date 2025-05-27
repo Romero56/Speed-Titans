@@ -17,7 +17,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // cámara
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 5.0f, 15.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -56,15 +56,19 @@ int main()
     }
 
     glEnable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+
 
     Shader shader("shaders/model.vert", "shaders/model.frag");
 
     //cargar modelo
-    Model Model("Modelos/bee/scene.gltf");
+    Model Model("Modelos/ciudad/scene.gltf");
+
+
 
 
     // Definir antes del bucle principal
-    glm::vec3 lightPos(2.0f, 4.0f, 2.0f);
+    glm::vec3 lightPos(10.0f, 20.0f, 10.0f);
     glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
     while (!glfwWindowShouldClose(window))
@@ -81,6 +85,7 @@ int main()
         shader.Use();
 
         glm::mat4 projection = glm::perspective(glm::radians(camera.GetZoom()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 modelMatrix = glm::mat4(1.0f);
         modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
@@ -98,6 +103,7 @@ int main()
 
         Model.Draw(shader.Program);
 
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -111,18 +117,21 @@ int main()
 // input teclado
 void processInput(GLFWwindow *window)
 {
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    float cameraSpeed = 6.0f * deltaTime;
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
-    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         camera.ProcessKeyboard(LEFT, deltaTime);
-    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
 }
+
 
 // redimensionamiento ventana
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -130,7 +139,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-// movimiento mouse
+
+
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
     if (firstMouse)
@@ -142,6 +152,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
     float xoffset = xpos - lastX;
     float yoffset = lastY - ypos;
+
     lastX = xpos;
     lastY = ypos;
 

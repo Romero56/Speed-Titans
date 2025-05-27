@@ -1,9 +1,13 @@
+#define GLM_ENABLE_EXPERIMENTAL
 
 #include "stb_image.h"
-
 #include <iostream>
 #include "Model.h"
-#include "stb_image.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/matrix_major_storage.hpp>
+
 
 Model::Model(const std::string& path) {
     loadModel(path);
@@ -17,16 +21,16 @@ void Model::Draw(GLuint shaderProgram) {
 void Model::loadModel(const std::string& path) {
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path,
-    aiProcess_Triangulate |
-    aiProcess_FlipUVs |
-    aiProcess_CalcTangentSpace |
-    aiProcess_GenSmoothNormals |
-    aiProcess_JoinIdenticalVertices |
-    aiProcess_ImproveCacheLocality |
-    aiProcess_RemoveRedundantMaterials |
-    aiProcess_FindInvalidData |
-    aiProcess_OptimizeMeshes
-);
+        aiProcess_Triangulate |
+        aiProcess_FlipUVs |
+        aiProcess_CalcTangentSpace |
+        aiProcess_GenSmoothNormals |
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_ImproveCacheLocality |
+        aiProcess_RemoveRedundantMaterials |
+        aiProcess_FindInvalidData |
+        aiProcess_OptimizeMeshes);
+
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         std::cerr << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
@@ -34,21 +38,34 @@ void Model::loadModel(const std::string& path) {
     }
 
     directory = path.substr(0, path.find_last_of('/'));
-    processNode(scene->mRootNode, scene);
+
+    // ✅ Llama a processNode con matriz identidad como transformación raíz
+    processNode(scene->mRootNode, scene, glm::mat4(1.0f));
 }
 
-void Model::processNode(aiNode* node, const aiScene* scene) {
-    // Procesar todas las mallas del nodo actual
+
+
+
+void Model::processNode(aiNode* node, const aiScene* scene, glm::mat4 parentTransform)
+{
+    // 🔹 1. Obtener la transformación local del nodo
+    glm::mat4 localTransform = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
+
+    // 🔹 2. Combinar con la transformación acumulada (del padre)
+    glm::mat4 globalTransform = parentTransform * localTransform;
+
+    // 🔹 3. Procesar todas las mallas del nodo
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        meshes.push_back(processMesh(mesh, scene));
+        meshes.push_back(processMesh(mesh, scene)); // ← aquí podrías pasar globalTransform más adelante si haces skinning
     }
 
-    // Recursivamente procesar los hijos
+    // 🔹 4. Recursivamente procesar los nodos hijos
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        processNode(node->mChildren[i], scene);
+        processNode(node->mChildren[i], scene, globalTransform);
     }
 }
+
 
 Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
     std::vector<Vertex> vertices;

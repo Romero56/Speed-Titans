@@ -50,25 +50,35 @@ void Mesh::setupMesh()
 }
 
 
-void Mesh::Draw(GLuint shaderProgram)
+void Mesh::Draw(GLuint shaderID)
 {
-    GLuint diffuseNr = 1;
-    GLuint specularNr = 1;
+    unsigned int diffuseNr = 1;
+    unsigned int normalNr = 1;
+    unsigned int metalRoughNr = 1;
 
-    for (GLuint i = 0; i < textures.size(); i++)
+    for (unsigned int i = 0; i < textures.size(); i++)
     {
         glActiveTexture(GL_TEXTURE0 + i);
+        std::string number;
         std::string name = textures[i].type;
-        std::string number = (name == "texture_diffuse") ? std::to_string(diffuseNr++) : std::to_string(specularNr++);
-        std::string uniformName = "material." + name + number;
 
-        glUniform1i(glGetUniformLocation(shaderProgram, uniformName.c_str()), i);
+        if (name == "texture_diffuse")
+            number = std::to_string(diffuseNr++);
+        else if (name == "texture_normal")
+            number = std::to_string(normalNr++);
+        else if (name == "texture_metallicRoughness")
+            number = std::to_string(metalRoughNr++);
+        else
+            number = "1"; // por defecto
+
+        std::string uniformName = name + number;
+        glUniform1i(glGetUniformLocation(shaderID, uniformName.c_str()), i);
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
 
     glBindVertexArray(this->VAO);
-    glDrawElements(GL_TRIANGLES, this->indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
-    glActiveTexture(GL_TEXTURE0); // reset
+    glActiveTexture(GL_TEXTURE0);
 }
