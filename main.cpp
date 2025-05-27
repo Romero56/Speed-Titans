@@ -60,7 +60,7 @@ int main()
     Shader shader("shaders/model.vert", "shaders/model.frag");
 
     //cargar modelo
-    Model Model("Modelos/auto/scene.gltf");
+    Model Model("Modelos/bee/scene.gltf");
 
 
     // Definir antes del bucle principal
