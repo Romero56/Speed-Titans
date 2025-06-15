@@ -1,11 +1,12 @@
-#include <glad/glad.h>
+#include <glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "Shader.h"
 #include "Camera.h"
 #include "Model.h"
+#include "Sounds.h"
 #include "stb_image.h"
-#include <glm/gtc/type_ptr.hpp>
+#include <gtc/type_ptr.hpp>
 
 
 
@@ -28,6 +29,8 @@ float lastFrame = 0.0f;
 
 int main()
 {
+
+
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -63,6 +66,12 @@ int main()
 
     //cargar modelo
     Model Model("Modelos/ciudad/scene.gltf");
+
+    //Sonido
+    ALuint buffer;
+    if (LoadWavFile("Sounds/city.wav", buffer)) {
+        PlaySound(buffer);
+    }
 
 
 

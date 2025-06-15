@@ -1,7 +1,7 @@
 #pragma once
 
-#include <glad/glad.h>
-#include <glm/glm.hpp>
+#include <glad.h>
+#include <glm.hpp>
 #include <string>
 #include <vector>
 #include <assimp/scene.h>

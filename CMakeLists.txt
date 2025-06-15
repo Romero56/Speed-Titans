@@ -3,34 +3,77 @@ project(SpeedTitans)
 
 set(CMAKE_CXX_STANDARD 20)
 
-# Compilar assimp desde la carpeta ya configurada
-add_subdirectory(Libs/assimp)
+# ----------------------------------------
+# INCLUDES
+# ----------------------------------------
 
-# Executable
+include_directories(
+        ${CMAKE_SOURCE_DIR}/Libs
+        ${CMAKE_SOURCE_DIR}/Libs/assimp
+        ${CMAKE_SOURCE_DIR}/Libs/GLFW
+        ${CMAKE_SOURCE_DIR}/Libs/AL
+        ${CMAKE_SOURCE_DIR}/Libs/glad
+        ${CMAKE_SOURCE_DIR}/Libs/glm
+        ${CMAKE_SOURCE_DIR}/Libs/stb
+)
+
+link_directories(
+        ${CMAKE_SOURCE_DIR}/Libs/assimp/lib
+        ${CMAKE_SOURCE_DIR}/Libs/GLFW/lib
+        ${CMAKE_SOURCE_DIR}/Libs/AL/lib
+)
+
+# ----------------------------------------
+# FUENTES
+# ----------------------------------------
+
 add_executable(${PROJECT_NAME}
         main.cpp
         Libs/Mesh.cpp
-        Libs/glad/glad.c
-        Libs/Model.h
         Libs/Model.cpp
+        Libs/glad/glad.c
         Libs/stb/stb_image.cpp
+        Libs/Sounds.h
+        Libs/Sounds.cpp
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE
-        ${CMAKE_SOURCE_DIR}/Libs
-        ${CMAKE_SOURCE_DIR}/Libs/glad/include
-        ${CMAKE_SOURCE_DIR}/Libs/GLFW
-        ${CMAKE_SOURCE_DIR}/Libs/glm
-        ${CMAKE_SOURCE_DIR}/Libs/stb
-        ${CMAKE_SOURCE_DIR}/Libs/assimp/include
-)
+# ----------------------------------------
+# LIBRERÍAS A ENLAZAR
+# ----------------------------------------
 
-# Link libraries (GLFW, GLAD, ASSIMP, OpenGL)
 target_link_libraries(${PROJECT_NAME}
-        ${CMAKE_SOURCE_DIR}/Libs/GLFW/libglfw3.a
-        assimp
-        opengl32
+        assimp          # libassimp.dll.a
+        glfw3           # libglfw3.dll.a
+        openal          # libopenal.dll.a
+        opengl32        # OpenGL para Windows
         glu32
         gdi32
         winmm
+)
+
+# ----------------------------------------
+# POST-BUILD: Copiar DLLs automáticamente
+# ----------------------------------------
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/DLLs $<TARGET_FILE_DIR:${PROJECT_NAME}>
+)
+
+# Copiar automáticamente Modelos
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/Modelos $<TARGET_FILE_DIR:${PROJECT_NAME}>/Modelos
+)
+
+# Copiar automáticamente Shaders
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/Shaders $<TARGET_FILE_DIR:${PROJECT_NAME}>/Shaders
+)
+
+# Copiar automáticamente Sounds
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/Sounds $<TARGET_FILE_DIR:${PROJECT_NAME}>/Sounds
 )
