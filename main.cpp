@@ -1,4 +1,4 @@
-#include <glad.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "Shader.h"
@@ -7,8 +7,9 @@
 #include "Sounds.h"
 #include "stb_image.h"
 #include <gtc/type_ptr.hpp>
-
-
+#include <glm/gtc/matrix_transform.hpp>
+#include "Skybox.h"
+#include <filesystem>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -27,15 +28,12 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-int main()
-{
-
-
+int main() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#ifdef __APPLE__
+#ifdef _APPLE_
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
@@ -49,7 +47,6 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
-
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -58,11 +55,26 @@ int main()
         return -1;
     }
 
+    // AÑADIDO: Activa el filtrado de cubemap sin fisuras para evitar líneas en el skybox
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+    std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
+
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 
+    Shader shader("Shaders/model.vert", "Shaders/model.frag");
 
-    Shader shader("shaders/model.vert", "shaders/model.frag");
+    // Skybox
+    std::vector<std::string> faces = {
+        "Modelos/skybox/valley_rt.jpg.jpg",
+        "Modelos/skybox/valley_lf.jpg.jpg",
+        "Modelos/skybox/valley_up.jpg.jpg",
+        "Modelos/skybox/valley_dn.jpg.jpg",
+        "Modelos/skybox/valley_ft.jpg.jpg",
+        "Modelos/skybox/valley_bk.jpg.jpg"
+    };
+    Skybox skybox(faces);
 
     //cargar modelo
     Model Model("Modelos/ciudad/scene.gltf");
@@ -73,15 +85,10 @@ int main()
         PlaySound(buffer);
     }
 
-
-
-
-    // Definir antes del bucle principal
     glm::vec3 lightPos(10.0f, 20.0f, 10.0f);
     glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
@@ -91,33 +98,35 @@ int main()
         glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glm::mat4 projection = glm::perspective(glm::radians(camera.GetZoom()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+
+        // SKYBOX primero
+        skybox.Draw(view, projection);
+
+        // MODELO
         shader.Use();
 
-        glm::mat4 projection = glm::perspective(glm::radians(camera.GetZoom()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-
-        glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 modelMatrix = glm::mat4(1.0f);
-        modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
-        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f));
 
-        // Cargar matrices al shader
+       //probar para centrar el mapa
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(1.0f)); // Escala el modelo (1.0f para tamaño original)
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(75.0f), glm::vec3(30.0f, -5.0f, -2.0f)); // Rota 90 grados alrededor del eje Y
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, -3.0f, 0.0f)); // Baja el modelo 3 unidades en Y
+
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
-        // Iluminación
         glUniform3fv(glGetUniformLocation(shader.Program, "lightPos"), 1, glm::value_ptr(lightPos));
         glUniform3fv(glGetUniformLocation(shader.Program, "lightColor"), 1, glm::value_ptr(lightColor));
         glUniform3fv(glGetUniformLocation(shader.Program, "viewPos"), 1, glm::value_ptr(camera.GetPosition()));
 
         Model.Draw(shader.Program);
 
-
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
-
 
     glfwTerminate();
     return 0;
@@ -141,14 +150,11 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
-
 // redimensionamiento ventana
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
-
-
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {

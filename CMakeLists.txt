@@ -33,8 +33,8 @@ add_executable(${PROJECT_NAME}
         Libs/Model.cpp
         Libs/glad/glad.c
         Libs/stb/stb_image.cpp
-        Libs/Sounds.h
         Libs/Sounds.cpp
+        Libs/skybox.cpp
 )
 
 # ----------------------------------------
@@ -42,10 +42,10 @@ add_executable(${PROJECT_NAME}
 # ----------------------------------------
 
 target_link_libraries(${PROJECT_NAME}
-        assimp          # libassimp.dll.a
-        glfw3           # libglfw3.dll.a
-        openal          # libopenal.dll.a
-        opengl32        # OpenGL para Windows
+        assimp
+        glfw3
+        openal
+        opengl32
         glu32
         gdi32
         winmm
@@ -76,4 +76,10 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/Sounds $<TARGET_FILE_DIR:${PROJECT_NAME}>/Sounds
+)
+
+# Texturas del skybox
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/Modelos/Skybox $<TARGET_FILE_DIR:${PROJECT_NAME}>/Modelos/Skybox
 )
