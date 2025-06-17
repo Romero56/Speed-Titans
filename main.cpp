@@ -10,6 +10,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "Skybox.h"
 #include <filesystem>
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -45,9 +49,33 @@ int main() {
         return -1;
     }
     glfwMakeContextCurrent(window);
+    if (!window) {
+        std::cerr << "GLFW window is null!" << std::endl;
+        return -1;
+    }
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Error al inicializar GLAD" << std::endl;
+        return -1;
+    }
+
+    // Inicializar Dear ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+    ImGui::StyleColorsDark(); // Podés cambiar a Light si querés
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
+
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+
+
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -88,12 +116,24 @@ int main() {
     glm::vec3 lightPos(10.0f, 20.0f, 10.0f);
     glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
+    float escalaModelo = 1.0f;
+
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
         processInput(window);
+        // Comenzar nuevo frame ImGui
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        // Ventana de prueba ImGui
+        ImGui::Begin("Panel de control");
+        ImGui::Text("Control de Escala del Modelo");
+        ImGui::SliderFloat("Escala", &escalaModelo, 0.1f, 5.0f);
+        ImGui::End();
 
         glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -110,7 +150,8 @@ int main() {
         glm::mat4 modelMatrix = glm::mat4(1.0f);
 
        //probar para centrar el mapa
-        modelMatrix = glm::scale(modelMatrix, glm::vec3(1.0f)); // Escala el modelo (1.0f para tamaño original)
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(escalaModelo));
+
         modelMatrix = glm::rotate(modelMatrix, glm::radians(75.0f), glm::vec3(30.0f, -5.0f, -2.0f)); // Rota 90 grados alrededor del eje Y
         modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, -3.0f, 0.0f)); // Baja el modelo 3 unidades en Y
 
@@ -123,6 +164,11 @@ int main() {
         glUniform3fv(glGetUniformLocation(shader.Program, "viewPos"), 1, glm::value_ptr(camera.GetPosition()));
 
         Model.Draw(shader.Program);
+
+        // Render de ImGui
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 
         glfwSwapBuffers(window);
         glfwPollEvents();

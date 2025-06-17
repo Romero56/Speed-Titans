@@ -15,6 +15,9 @@ include_directories(
         ${CMAKE_SOURCE_DIR}/Libs/glad
         ${CMAKE_SOURCE_DIR}/Libs/glm
         ${CMAKE_SOURCE_DIR}/Libs/stb
+        ${CMAKE_SOURCE_DIR}/Libs/imgui
+        ${CMAKE_SOURCE_DIR}/Libs/imgui/backends
+
 )
 
 link_directories(
@@ -27,6 +30,7 @@ link_directories(
 # FUENTES
 # ----------------------------------------
 
+
 add_executable(${PROJECT_NAME}
         main.cpp
         Libs/Mesh.cpp
@@ -35,7 +39,17 @@ add_executable(${PROJECT_NAME}
         Libs/stb/stb_image.cpp
         Libs/Sounds.cpp
         Libs/skybox.cpp
+
+        Libs/imgui/imgui.cpp
+        Libs/imgui/imgui_draw.cpp
+        Libs/imgui/imgui_tables.cpp
+        Libs/imgui/imgui_widgets.cpp
+        Libs/imgui/imgui_demo.cpp
+
+        Libs/imgui/backends/imgui_impl_glfw.cpp
+        Libs/imgui/backends/imgui_impl_opengl3.cpp
 )
+
 
 # ----------------------------------------
 # LIBRERÍAS A ENLAZAR
