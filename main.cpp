@@ -17,7 +17,6 @@
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void processInput(GLFWwindow *window);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -27,10 +26,65 @@ Camera camera(glm::vec3(0.0f, 5.0f, 15.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
+bool cursorEnabled = false;
+bool showMainMenu = false;
+float volumenCity = 1.0f; // 1.0 = volumen completo
+ALuint sourceCity;        // fuente de audio reproducida
+ALuint buffer;
+
+// Interfaz
+bool mostrarVolumen = false;
+bool mostrarCreditos = false;
+
+
+
+
 
 // tiempo
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+
+void processInput(GLFWwindow *window)
+{
+
+    // Dentro de la versión original de processInput()
+
+    static bool tabPressedLastFrame = false;
+
+    if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS) {
+        if (!tabPressedLastFrame) {
+            showMainMenu = !showMainMenu;
+            cursorEnabled = showMainMenu;
+            glfwSetInputMode(window, GLFW_CURSOR, showMainMenu ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+
+            firstMouse = true;
+
+        }
+        tabPressedLastFrame = true;
+    } else {
+        tabPressedLastFrame = false;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    float cameraSpeed = 6.0f * deltaTime;
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.ProcessKeyboard(RIGHT, deltaTime);
+
+}
+
+
+glm::vec3 meteoroPos(0.0f, 2.0f, -5.0f);  // Posición inicial
+float meteoroScale = 0.1f;               // Escala inicial
+float meteoroRotY = 0.0f;                // Rotación en eje Y
 
 int main() {
     glfwInit();
@@ -105,13 +159,20 @@ int main() {
     Skybox skybox(faces);
 
     //cargar modelo
-    Model Model("Modelos/ciudad/scene.gltf");
+    Model ciudad("Modelos/ciudad/scene.gltf");
+
+    Model Meteoro("Modelos/meteoro/scene.gltf");
+
 
     //Sonido
-    ALuint buffer;
     if (LoadWavFile("Sounds/city.wav", buffer)) {
-        PlaySound(buffer);
+        alGenSources(1, &sourceCity);
+        alSourcei(sourceCity, AL_BUFFER, buffer);
+        alSourcef(sourceCity, AL_GAIN, volumenCity);
+        alSourcei(sourceCity, AL_LOOPING, AL_TRUE); // opcional: repetir sonido
+        alSourcePlay(sourceCity);
     }
+
 
     glm::vec3 lightPos(10.0f, 20.0f, 10.0f);
     glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
@@ -128,12 +189,58 @@ int main() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        if (showMainMenu) {
+            ImGui::Begin("Menu Principal");
 
-        // Ventana de prueba ImGui
-        ImGui::Begin("Panel de control");
-        ImGui::Text("Control de Escala del Modelo");
-        ImGui::SliderFloat("Escala", &escalaModelo, 0.1f, 5.0f);
-        ImGui::End();
+            // ----------- CARROS -------------
+            if (ImGui::Button("Carros")) {
+                std::cout << "Seleccionar carros\n";
+            }
+
+            // ----------- VOLUMEN ------------
+            if (ImGui::Button("Volumen")) {
+                mostrarVolumen = !mostrarVolumen;
+            }
+
+            if (mostrarVolumen) {
+                if (ImGui::SliderFloat("Volumen", &volumenCity, 0.0f, 1.0f)) {
+                    alSourcef(sourceCity, AL_GAIN, volumenCity);
+                }
+            }
+
+            // ----------- CREDITOS -----------
+            if (ImGui::Button("Créditos")) {
+                mostrarCreditos = true;
+            }
+
+            // Mostrar popup después del frame actual
+            if (mostrarCreditos) {
+                ImGui::OpenPopup("Creditos");
+                mostrarCreditos = false;
+            }
+
+            if (ImGui::BeginPopupModal("Creditos", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::Text("🎮 Speed Titans");
+                ImGui::Text("Creado por ING.LOPEZ y ING.ROMERO");
+                ImGui::Separator();
+                if (ImGui::Button("Cerrar")) {
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
+
+            // ----------- CERRAR MENÚ -----------
+            if (ImGui::Button("Cerrar menú")) {
+                showMainMenu = false;
+                cursorEnabled = false;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
+
+            ImGui::End(); // <-- CIERRA ImGui::Begin("Menu Principal")
+        }
+
+
+
 
         glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -163,7 +270,16 @@ int main() {
         glUniform3fv(glGetUniformLocation(shader.Program, "lightColor"), 1, glm::value_ptr(lightColor));
         glUniform3fv(glGetUniformLocation(shader.Program, "viewPos"), 1, glm::value_ptr(camera.GetPosition()));
 
-        Model.Draw(shader.Program);
+        ciudad.Draw(shader.Program);
+
+        // DIBUJAR METEORO
+        glm::mat4 meteoroMatrix = glm::mat4(1.0f);
+        meteoroMatrix = glm::translate(meteoroMatrix, glm::vec3(0.0f, 2.0f, -5.0f)); // cambia posición si querés
+        meteoroMatrix = glm::scale(meteoroMatrix, glm::vec3(0.1f)); // ajusta escala
+
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(meteoroMatrix));
+        Meteoro.Draw(shader.Program);
+
 
         // Render de ImGui
         ImGui::Render();
@@ -178,23 +294,6 @@ int main() {
     return 0;
 }
 
-// input teclado
-void processInput(GLFWwindow *window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    float cameraSpeed = 6.0f * deltaTime;
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
-}
 
 // redimensionamiento ventana
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -204,6 +303,10 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
+    if (cursorEnabled) {
+        return; // Si el cursor está activo, no mover la cámara
+    }
+
     if (firstMouse)
     {
         lastX = xpos;
