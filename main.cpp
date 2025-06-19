@@ -521,7 +521,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     ImGuiIO& io = ImGui::GetIO();
 
     // Solo procesar el movimiento del ratón si el cursor no está habilitado
-    // Y si ImGui NO está capturando el ratón (es decir, el ratón está libre para la cámara)
     if (cursorEnabled || io.WantCaptureMouse) {
         firstMouse = true; // Reiniciar para cuando la cámara se active de nuevo
         return; // No procesar movimiento de cámara
