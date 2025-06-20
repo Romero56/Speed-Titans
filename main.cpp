@@ -4,7 +4,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "Model.h"
-#include "Sounds.h" // Asegúrate de que esta librería tiene las funciones de OpenAL (alSourcePlay, alSourceStop)
+#include "Sounds.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Skybox.h"
@@ -59,7 +59,7 @@ float lastFrame = 0.0f;
 
 // Variables de la escena
 glm::vec3 lightPos(10.0f, 20.0f, 10.0f);
-glm::vec3 lightColor(1.0f, 1.0f, 1.0f); // Se mantiene el lightColor, aunque no haya slider de brillo.
+glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 float escalaModelo = 1.0f;
 glm::vec3 meteoroPos(0.0f, 2.0f, -5.0f);
 float meteoroScale = 0.1f;
@@ -326,6 +326,7 @@ int main() {
     if (LoadWavFile("Sounds/city.wav", buffer)) {
         alGenSources(1, &sourceCity);
         alSourcei(sourceCity, AL_BUFFER, buffer);
+        alSourcei(sourceCity, AL_LOOPING, AL_TRUE); // Esta línea hace que la música se reproduzca en bucle
         alSourcef(sourceCity, AL_GAIN, volumenCity); // Se usa el volumen inicial (1.0f)
         if (musicEnabled) { // Solo reproduce si musicEnabled es true al inicio
             alSourcePlay(sourceCity);
@@ -365,9 +366,8 @@ int main() {
             if (bigTitleFont) {
                 ImGui::PushFont(bigTitleFont);
                 textSize = ImGui::CalcTextSize(gameTitle);
-                ImGui::PopFont(); // Restaurar la fuente por defecto después de calcular el tamaño
+                ImGui::PopFont();
             } else {
-                // Fallback si la fuente grande no se cargó, usa la fuente por defecto actual
                 textSize = ImGui::CalcTextSize(gameTitle);
             }
 
@@ -398,7 +398,7 @@ int main() {
             float buttonWidth = 300.0f;
             float buttonXPos = (SCR_WIDTH - buttonWidth) * 0.5f;
 
-            // --- Botón "Iniciar Viaje"
+            // Botón "Iniciar Viaje"
             ImGui::SetCursorPosX(buttonXPos);
             // Aplicar estilo de resaltado si está seleccionado
             if (selectedMenuOption == 0) {
@@ -501,7 +501,7 @@ int main() {
             }
             ImGui::Spacing(); // Espacio después de créditos o su submenú
 
-            // --- Botón "Salir" ---
+            //  Botón "Salir"
             ImGui::SetCursorPosX(buttonXPos);
             if (selectedMenuOption == 3) {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.5f, 0.8f, 1.0f));
