@@ -24,7 +24,12 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // Cámara
-Camera camera(glm::vec3(0.0f, 5.0f, 15.0f));
+Camera freeCamera(glm::vec3(0.0f, 5.0f, 15.0f));  // Cámara libre
+Camera drivingCamera(glm::vec3(0.0f, 1.5f, 0.0f)); // Se ajustará dinámicamente
+Camera* activeCamera = &freeCamera;
+
+
+
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -33,7 +38,9 @@ bool showMainMenu = true; // aqui se muestra el menú principal al inicio
 
 // Sonido
 float volumenCity = 1.0f; // 1.0 = volumen de la musica
-ALuint sourceCity;        // musica reproducida
+ALuint sourceCity;// musica reproducida
+
+
 ALuint buffer;
 
 // Interfaz (ImGui)
@@ -56,6 +63,11 @@ float escalaModelo = 1.0f;
 glm::vec3 meteoroPos(0.0f, 2.0f, -5.0f);
 float meteoroScale = 0.1f;
 float meteoroRotY = 0.0f;
+
+glm::vec3 carroPos = glm::vec3(0.0f, 0.0f, 0.0f); // Posición inicial del carro
+float carroRotY = 0.0f; // Rotación Y (para orientación)
+float carroSpeed = 5.0f; // Velocidad al avanzar
+
 
 
 void processInput(GLFWwindow *window)
@@ -84,6 +96,35 @@ void processInput(GLFWwindow *window)
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    // Cambiar entre cámaras
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+        activeCamera = &freeCamera;
+
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+        activeCamera = &drivingCamera;
+
+  {
+
+        // Actualizar posición de la cámara detrás del carro
+        glm::vec3 offset(0.0f, 1.5f, 4.0f); // altura y distancia de la cámara al carro
+        glm::vec3 camPos = carroPos + glm::vec3(
+            glm::rotate(glm::mat4(1.0f), glm::radians(carroRotY), glm::vec3(0.0f, 1.0f, 0.0f)) *
+            glm::vec4(offset, 1.0f)
+        );
+
+        glm::vec3 target = carroPos + glm::vec3(
+            glm::rotate(glm::mat4(1.0f), glm::radians(carroRotY), glm::vec3(0.0f, 1.0f, 0.0f)) *
+            glm::vec4(0.0f, 1.0f, -2.0f, 1.0f)
+        );
+
+        drivingCamera.setPosition(camPos);
+        drivingCamera.setFront(glm::normalize(target - camPos));
+    }
+
+
+
+
 
 
     if (showMainMenu && !io.WantCaptureKeyboard) {
@@ -149,17 +190,51 @@ void processInput(GLFWwindow *window)
             enterPressedLastFrame = false;
         }
     }
-
     if (!showMainMenu && !io.WantCaptureMouse) {
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            camera.ProcessKeyboard(FORWARD, deltaTime);
+            activeCamera->ProcessKeyboard(FORWARD, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            camera.ProcessKeyboard(BACKWARD, deltaTime);
+            activeCamera->ProcessKeyboard(BACKWARD, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            camera.ProcessKeyboard(LEFT, deltaTime);
+            activeCamera->ProcessKeyboard(LEFT, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            camera.ProcessKeyboard(RIGHT, deltaTime);
+            activeCamera->ProcessKeyboard(RIGHT, deltaTime);
+
+        // Movimiento del carro cuando está activa la cámara de conducción
+        if (activeCamera == &drivingCamera) {
+            // --- Movimiento hacia adelante (tecla W) ---
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+                float velocidad = carroSpeed * deltaTime;
+
+                // Dirección basada en rotación del carro
+                glm::vec3 direccion = glm::rotate(glm::mat4(1.0f), glm::radians(carroRotY), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f);
+                carroPos += glm::vec3(direccion) * velocidad;
+            }
+
+            // --- Girar a la izquierda (tecla A) ---
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+                carroRotY += 100.0f * deltaTime;
+            }
+
+            // --- Girar a la derecha (tecla D) ---
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+                carroRotY -= 100.0f * deltaTime;
+            }
+            // ---- Cámara sobre el carro (modo conducción) ----
+            glm::vec3 offset(0.0f, -1.5f, 0.0f);  // Altura y distancia detrás del carro
+            glm::vec3 rotatedOffset = glm::vec3(glm::rotate(glm::mat4(1.0f), glm::radians(carroRotY), glm::vec3(0.0f, 3.0f, 0.0f)) * glm::vec4(offset, 1.0f));
+            glm::vec3 camPos = carroPos - rotatedOffset;
+
+            glm::vec3 targetOffset(0.0f, 1.5f, -1.0f);  // Dirección hacia la que mirar (ligeramente al frente)
+            glm::vec3 rotatedTarget = glm::vec3(glm::rotate(glm::mat4(1.0f), glm::radians(carroRotY), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::vec4(targetOffset, 1.0f));
+            glm::vec3 target = carroPos + rotatedTarget;
+
+            drivingCamera.setPosition(camPos);
+            drivingCamera.setFront(glm::normalize(target - camPos));
+
+        }
     }
+
 }
 
 
@@ -447,8 +522,8 @@ int main() {
             glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            glm::mat4 projection = glm::perspective(glm::radians(camera.GetZoom()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-            glm::mat4 view = camera.GetViewMatrix();
+            glm::mat4 projection = glm::perspective(glm::radians(activeCamera->GetZoom()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+            glm::mat4 view = activeCamera->GetViewMatrix();
 
             // SKYBOX primero
             skybox.Draw(view, projection);
@@ -458,10 +533,10 @@ int main() {
 
             glm::mat4 modelMatrix = glm::mat4(1.0f);
 
-           //probar para centrar el mapa
+            //probar para centrar el mapa
             modelMatrix = glm::scale(modelMatrix, glm::vec3(escalaModelo));
 
-            modelMatrix = glm::rotate(modelMatrix, glm::radians(75.0f), glm::vec3(30.0f, -5.0f, -2.0f)); // Rota 90 grados alrededor del eje Y
+            modelMatrix = glm::rotate(modelMatrix, glm::radians(90.0f), glm::vec3(30.0f, 1.0f,-1.0f)); // Rota 90 grados alrededor del eje Y
             modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, -3.0f, 0.0f)); // Baja el modelo 3 unidades en Y
 
             glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -470,14 +545,30 @@ int main() {
 
             glUniform3fv(glGetUniformLocation(shader.Program, "lightPos"), 1, glm::value_ptr(lightPos));
             glUniform3fv(glGetUniformLocation(shader.Program, "lightColor"), 1, glm::value_ptr(lightColor));
-            glUniform3fv(glGetUniformLocation(shader.Program, "viewPos"), 1, glm::value_ptr(camera.GetPosition()));
+            glUniform3fv(glGetUniformLocation(shader.Program, "viewPos"), 1, glm::value_ptr(activeCamera->GetPosition()));
 
             ciudad.Draw(shader.Program);
 
-            // DIBUJAR METEORO
+            // DIBUJAR METEORO (seguirá al carro)
             glm::mat4 meteoroMatrix = glm::mat4(1.0f);
-            meteoroMatrix = glm::translate(meteoroMatrix, glm::vec3(0.0f, 2.0f, -5.0f)); // cambia posición si querés
-            meteoroMatrix = glm::scale(meteoroMatrix, glm::vec3(0.1f)); // ajusta escala
+
+            // 1. Mover a la posición del carro
+            meteoroMatrix = glm::translate(meteoroMatrix, carroPos);
+
+            // 2. Rotar según la rotación Y del carro
+            meteoroMatrix = glm::rotate(meteoroMatrix, glm::radians(carroRotY), glm::vec3(0.0f, 1.0f, 0.0f));
+
+            meteoroMatrix = glm::rotate(meteoroMatrix, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+
+            // 3. Escalar
+            meteoroMatrix = glm::scale(meteoroMatrix, glm::vec3(0.25f, 0.3f, 0.1f));
+
+            // 4. Rotarlo acostado como antes
+            meteoroMatrix = glm::rotate(meteoroMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+            // 5. Ajustar su altura (si seguía flotando o muy abajo)
+            meteoroMatrix = glm::translate(meteoroMatrix, glm::vec3(0.0f, -3.0f, 0.0f));
 
             glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(meteoroMatrix));
             Meteoro.Draw(shader.Program);
@@ -520,11 +611,11 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     // Obtener el estado de ImGuiIO para ver si ImGui está capturando el ratón
     ImGuiIO& io = ImGui::GetIO();
 
-    // Solo procesar el movimiento del ratón si el cursor no está habilitado
-    if (cursorEnabled || io.WantCaptureMouse) {
+    if (cursorEnabled || io.WantCaptureMouse || activeCamera == &drivingCamera) {
         firstMouse = true; // Reiniciar para cuando la cámara se active de nuevo
         return; // No procesar movimiento de cámara
     }
+
 
     if (firstMouse)
     {
@@ -539,5 +630,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     lastX = xpos;
     lastY = ypos;
 
-    camera.ProcessMouseMovement(xoffset, yoffset);
+    activeCamera->ProcessMouseMovement(xoffset, yoffset);
+
 }

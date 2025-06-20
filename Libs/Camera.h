@@ -31,6 +31,12 @@ class Camera
 {
 public:
     glm::vec3 GetPosition() const { return position; }
+    void setPosition(const glm::vec3& pos) { position = pos; }
+    void setFront(const glm::vec3& frontVec) { front = frontVec; }
+    GLfloat GetZoom() const { return zoom; }
+
+    glm::vec3 position;
+    glm::vec3 front;
 
     // Constructor with vectors
     Camera( glm::vec3 position = glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3 up = glm::vec3( 0.0f, 1.0f, 0.0f ), GLfloat yaw = YAW, GLfloat pitch = PITCH ) : front( glm::vec3( 0.0f, 0.0f, -1.0f ) ), movementSpeed( SPEED ), mouseSensitivity( SENSITIVTY ), zoom( ZOOM )
@@ -138,8 +144,6 @@ if (this->zoom >= 45.0f)
 
 private:
     // Camera Attributes
-    glm::vec3 position;
-    glm::vec3 front;
     glm::vec3 up;
     glm::vec3 right;
     glm::vec3 worldUp;

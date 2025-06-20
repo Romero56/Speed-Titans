@@ -16,12 +16,12 @@ void main()
 {
     // Propiedades del material
     vec3 color = texture(texture_diffuse1, TexCoords).rgb;
-    vec3 ambient = 0.1 * color;
+    vec3 ambient = 0.3 * color;
 
     // Difusa
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(lightPos - FragPos);
-    float diff = max(dot(norm, lightDir), 0.0);
+    float diff = max(dot(norm, lightDir), 0.50);
     vec3 diffuse = diff * color;
 
     // Especular
