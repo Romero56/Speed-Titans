@@ -1,0 +1,11 @@
+Model Information:
+* title:	carro
+* source:	https://sketchfab.com/3d-models/carro-4be131d7a01749d49f42cce7f8c538ab
+* author:	MariaEduardaRodrigues (https://sketchfab.com/MariaEduardaRodrigues)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "carro" (https://sketchfab.com/3d-models/carro-4be131d7a01749d49f42cce7f8c538ab) by MariaEduardaRodrigues (https://sketchfab.com/MariaEduardaRodrigues) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

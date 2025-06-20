@@ -4,7 +4,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "Model.h"
-#include "Sounds.h"
+#include "Sounds.h" // Asegúrate de que esta librería tiene las funciones de OpenAL (alSourcePlay, alSourceStop)
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Skybox.h"
@@ -37,8 +37,9 @@ bool cursorEnabled = false;
 bool showMainMenu = true; // aqui se muestra el menú principal al inicio
 
 // Sonido
-float volumenCity = 1.0f; // 1.0 = volumen de la musica
+float volumenCity = 1.0f; // 1.0 = volumen de la musica (se mantiene por si acaso, aunque no se use directamente para un slider)
 ALuint sourceCity;// musica reproducida
+bool musicEnabled = true; // Nueva variable para controlar si la música está activa o no
 
 
 ALuint buffer;
@@ -46,7 +47,7 @@ ALuint buffer;
 // Interfaz (ImGui)
 bool mostrarConfiguracion = false; // para el submenú de configuración
 bool mostrarCreditos = false;
-float brilloJuego = 1.0f;   // Para controlar el brillo
+// float brilloJuego = 1.0f;   // Eliminada la variable de brillo
 int selectedMenuOption = 0;  // 0: Iniciar Viaje, 1: Configuración, 2: Créditos, 3: Salir
 
 // Fuentes ImGui
@@ -58,7 +59,7 @@ float lastFrame = 0.0f;
 
 // Variables de la escena
 glm::vec3 lightPos(10.0f, 20.0f, 10.0f);
-glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+glm::vec3 lightColor(1.0f, 1.0f, 1.0f); // Se mantiene el lightColor, aunque no haya slider de brillo.
 float escalaModelo = 1.0f;
 glm::vec3 meteoroPos(0.0f, 2.0f, -5.0f);
 float meteoroScale = 0.1f;
@@ -243,7 +244,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#ifdef _APPLE_
+#ifdef APPLE
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
@@ -325,9 +326,10 @@ int main() {
     if (LoadWavFile("Sounds/city.wav", buffer)) {
         alGenSources(1, &sourceCity);
         alSourcei(sourceCity, AL_BUFFER, buffer);
-        alSourcef(sourceCity, AL_GAIN, volumenCity);
-        alSourcei(sourceCity, AL_LOOPING, AL_TRUE); // opcional: repetir sonido
-        alSourcePlay(sourceCity);
+        alSourcef(sourceCity, AL_GAIN, volumenCity); // Se usa el volumen inicial (1.0f)
+        if (musicEnabled) { // Solo reproduce si musicEnabled es true al inicio
+            alSourcePlay(sourceCity);
+        }
     } else {
         std::cerr << "Advertencia: No se pudo cargar Sounds/city.wav\n";
     }
@@ -438,12 +440,16 @@ int main() {
                 ImGui::SetCursorPosX(buttonXPos + 20); // Un poco de indentación
                 ImGui::Text("Ajustes de Configuración");
                 ImGui::SetCursorPosX(buttonXPos + 20);
-                if (ImGui::SliderFloat("Brillo", &brilloJuego, 0.1f, 2.0f, "Brillo: %.1f")) {
-                    lightColor = glm::vec3(brilloJuego, brilloJuego, brilloJuego);
-                }
-                ImGui::SetCursorPosX(buttonXPos + 20);
-                if (ImGui::SliderFloat("Volumen Música", &volumenCity, 0.0f, 1.0f, "Volumen: %.1f")) {
-                    alSourcef(sourceCity, AL_GAIN, volumenCity);
+
+                // Botón de Música: Sí/No
+                const char* musicButtonText = musicEnabled ? "Música: Sí" : "Música: No";
+                if (ImGui::Button(musicButtonText, ImVec2(buttonWidth - 40, 30))) { // Ancho ajustado para indentación
+                    musicEnabled = !musicEnabled; // Alternar estado
+                    if (musicEnabled) {
+                        alSourcePlay(sourceCity); // Reproducir si se activa
+                    } else {
+                        alSourceStop(sourceCity); // Detener si se desactiva
+                    }
                 }
                 ImGui::Separator();
             }
