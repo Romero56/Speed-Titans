@@ -20,12 +20,13 @@ include_directories(
 
 )
 
-link_directories(
-        ${CMAKE_SOURCE_DIR}/Libs/assimp/lib
-        ${CMAKE_SOURCE_DIR}/Libs/GLFW/lib
-        ${CMAKE_SOURCE_DIR}/Libs/AL/lib
-)
-
+if (WIN32)
+    link_directories(
+            ${CMAKE_SOURCE_DIR}/Libs/assimp/lib
+            ${CMAKE_SOURCE_DIR}/Libs/GLFW/lib
+            ${CMAKE_SOURCE_DIR}/Libs/AL/lib
+    )
+endif()
 # ----------------------------------------
 # FUENTES
 # ----------------------------------------
@@ -55,15 +56,27 @@ add_executable(${PROJECT_NAME}
 # LIBRERÍAS A ENLAZAR
 # ----------------------------------------
 
-target_link_libraries(${PROJECT_NAME}
-        assimp
-        glfw3
-        openal
-        opengl32
-        glu32
-        gdi32
-        winmm
-)
+
+if (WIN32)
+    target_link_libraries(${PROJECT_NAME}
+            assimp
+            glfw3
+            openal
+            opengl32
+            glu32
+            gdi32
+            winmm
+    )
+else()
+    target_link_libraries(${PROJECT_NAME}
+            assimp
+            glfw
+            openal
+            GL
+            GLU
+            pthread
+    )
+endif()
 
 # ----------------------------------------
 # POST-BUILD: Copiar DLLs automáticamente
