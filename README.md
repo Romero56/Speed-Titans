@@ -48,7 +48,11 @@ These steps will set up the project and compile it, generating the `SpeedTitans.
 
 1. **Clone the repository:** Open your terminal (CMD or Git Bash) and run:
 
- ```bash
+```bash
+
+sudo apt update
+sudo apt install g++ cmake libglfw3-dev libopenal-dev libassimp-dev libglm-dev libglu1-mesa-dev.
+
  git clone https://github.com/Romero56/Speed-Titans.git
  ```
 
@@ -82,8 +86,27 @@ When run, the program should:
 
 ### Youtube video
 
-[Test video](https://youtu.be/41Mx0lsdEUE?feature=shared) 
+[Test video](https://youtu.be/41Mx0lsdEUE?feature=shared) read for more information.
 
 ### License
 
-Our project is licensed under the [MIT](https://github.com/Romero56/Speed-Titans/blob/main/LICENSE) read for more information.
+Our project is licensed under the [MIT](https://github.com/Romero56/Speed-Titans/blob/main/LICENSE)
+
+## Authors
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/lopez-01">
+        <img src="https://github.com/lopez-01.png?size=60" width="60" height="60" alt="lopez-01"/><br/>
+        lopez-01
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/Romero56">
+        <img src="https://github.com/Romero56.png?size=60" width="60" height="60" alt="Romero56"/><br/>
+        Romero56
+      </a>
+    </td>
+  </tr>
+</table>
