@@ -82,8 +82,8 @@ When run, the program should:
 
 ### Youtube video
 
-[Test video](https://youtu.be/41Mx0lsdEUE?feature=shared) read for more information.
+[Test video](https://youtu.be/41Mx0lsdEUE?feature=shared) 
 
 ### License
 
-Our project is licensed under the [MIT](https://github.com/Romero56/Speed-Titans/blob/main/LICENSE)
+Our project is licensed under the [MIT](https://github.com/Romero56/Speed-Titans/blob/main/LICENSE) read for more information.
